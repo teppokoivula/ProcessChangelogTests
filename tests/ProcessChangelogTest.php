@@ -40,12 +40,12 @@ class ProcessChangelogTest extends PHPUnit_Framework_TestCase {
         // Install module (if possible and not already installed)
         $module = substr(__CLASS__, 0, strlen(__CLASS__)-4);
         if (!wire('modules')->isInstalled($module)) {
-        	if (wire('modules')->isInstallable($module)) {
-        		wire('modules')->install($module);
-        		exit("Module $module installed, please rerun tests.");
-        	} else {
-        		exit("Module $module not installable, please install manually and rerun tests.");
-        	}
+            if (wire('modules')->isInstallable($module)) {
+                wire('modules')->install($module);
+                exit("Module $module installed, please rerun tests.");
+            } else {
+                exit("Module $module not installable, please install manually and rerun tests.");
+            }
         }
 
         // Delete all rows from changelog database table
@@ -62,7 +62,7 @@ class ProcessChangelogTest extends PHPUnit_Framework_TestCase {
      */
     public static function tearDownAfterClass() {
         foreach (wire('pages')->find("title^='a test page', include=all") as $page) {
-        	$page->delete();
+            $page->delete();
         }
         wire('db')->query("DELETE FROM " . ProcessChangelogHooks::TABLE_NAME);
     }
@@ -204,11 +204,11 @@ class ProcessChangelogTest extends PHPUnit_Framework_TestCase {
      * @return Page
      */
     public function testRestorePage(Page $page) {
-    	$page->parent = wire('pages')->get("/");
-    	wire('pages')->restore($page);
-    	self::$operations[] = "restored";
-    	
-    	return $page;
+        $page->parent = wire('pages')->get("/");
+        wire('pages')->restore($page);
+        self::$operations[] = "restored";
+        
+        return $page;
     }
 
     /**
@@ -227,11 +227,11 @@ class ProcessChangelogTest extends PHPUnit_Framework_TestCase {
 
     /**
      * Make sure that data collected in database matches performed operations
-	 *
+     *
      */
     public function testTableOperations()
     {
-    	$sql = "SELECT GROUP_CONCAT(operation) FROM " . ProcessChangelogHooks::TABLE_NAME;
+        $sql = "SELECT GROUP_CONCAT(operation) FROM " . ProcessChangelogHooks::TABLE_NAME;
         $row = wire('db')->query($sql)->fetch_row();
         $this->assertEquals(implode(",", self::$operations), reset($row));
     }
@@ -239,7 +239,7 @@ class ProcessChangelogTest extends PHPUnit_Framework_TestCase {
     /**
      * Make sure that database contains correct data
      *
-	 * @dataProvider providerForTestTableData
+     * @dataProvider providerForTestTableData
      * @param int $key ID number of current database table row
      * @param string $data Expected database table row data
      */
@@ -247,11 +247,11 @@ class ProcessChangelogTest extends PHPUnit_Framework_TestCase {
     {
         // When page is trashed, it's name is prefixed with it's ID. We're using
         // "?" as placeholder for that ID in the data provided by data provider.
-    	if (strpos($data, "?") !== false) $data = str_replace("?", self::$page_id, $data);
+        if (strpos($data, "?") !== false) $data = str_replace("?", self::$page_id, $data);
 
-    	$sql = "SELECT data FROM " . ProcessChangelogHooks::TABLE_NAME . " LIMIT $key,1";
+        $sql = "SELECT data FROM " . ProcessChangelogHooks::TABLE_NAME . " LIMIT $key,1";
         $row = wire('db')->query($sql)->fetch_row();
-    	$this->assertEquals($data, reset($row));
+        $this->assertEquals($data, reset($row));
     }
 
     /**
@@ -260,18 +260,18 @@ class ProcessChangelogTest extends PHPUnit_Framework_TestCase {
      * @return array Array of expected database rows, each an array of it's own
      */
     public static function providerForTestTableData() {
-    	return array(
-    		array(0, '{"Page title":"a test page","Page name":"a-test-page","Template name":"basic-page","Page URL":"/a-test-page/"}'),
-    		array(1, '{"Page title":"a test page 2","Page name":"a-test-page","Template name":"basic-page","Page URL":"/a-test-page/","Fields edited":"title"}'),
-    		array(2, '{"Page title":"a test page 2","Page name":"a-test-page","Template name":"basic-page","Page URL":"/a-test-page/"}'),
-    		array(3, '{"Page title":"a test page 2","Page name":"a-test-page","Template name":"basic-page","Page URL":"/a-test-page/"}'),
-    		array(4, '{"Page title":"a test page 2","Page name":"a-test-page","Template name":"basic-page","Page URL":"/a-test-page/","Fields edited":"sidebar"}'),
-    		array(5, '{"Page title":"a test page 2","Page name":"a-test-page","Template name":"basic-page","Page URL":"/a-test-page/"}'),
-    		array(6, '{"Page title":"a test page 2","Page name":"a-test-page","Template name":"basic-page","Page URL":"/about/a-test-page/","Previous page URL":"/a-test-page/"}'),
-    		array(7, '{"Page title":"a test page 2","Page name":"?_a-test-page","Previous page name":"a-test-page","Template name":"basic-page","Page URL":"/trash/?_a-test-page/","Previous page URL":"/about/a-test-page/"}'),
-    		array(8, '{"Page title":"a test page 2","Page name":"a-test-page","Previous page name":"a-test-page","Template name":"basic-page","Page URL":"/a-test-page/","Previous page URL":"/trash/a-test-page/"}'),
-    		array(9, '{"Page name":"a-test-page","Previous page name":"a-test-page","Template name":"basic-page","Page URL":"/a-test-page/","Previous page URL":"/trash/a-test-page/"}'),
-    	);
+        return array(
+            array(0, '{"Page title":"a test page","Page name":"a-test-page","Template name":"basic-page","Page URL":"/a-test-page/"}'),
+            array(1, '{"Page title":"a test page 2","Page name":"a-test-page","Template name":"basic-page","Page URL":"/a-test-page/","Fields edited":"title"}'),
+            array(2, '{"Page title":"a test page 2","Page name":"a-test-page","Template name":"basic-page","Page URL":"/a-test-page/"}'),
+            array(3, '{"Page title":"a test page 2","Page name":"a-test-page","Template name":"basic-page","Page URL":"/a-test-page/"}'),
+            array(4, '{"Page title":"a test page 2","Page name":"a-test-page","Template name":"basic-page","Page URL":"/a-test-page/","Fields edited":"sidebar"}'),
+            array(5, '{"Page title":"a test page 2","Page name":"a-test-page","Template name":"basic-page","Page URL":"/a-test-page/"}'),
+            array(6, '{"Page title":"a test page 2","Page name":"a-test-page","Template name":"basic-page","Page URL":"/about/a-test-page/","Previous page URL":"/a-test-page/"}'),
+            array(7, '{"Page title":"a test page 2","Page name":"?_a-test-page","Previous page name":"a-test-page","Template name":"basic-page","Page URL":"/trash/?_a-test-page/","Previous page URL":"/about/a-test-page/"}'),
+            array(8, '{"Page title":"a test page 2","Page name":"a-test-page","Previous page name":"a-test-page","Template name":"basic-page","Page URL":"/a-test-page/","Previous page URL":"/trash/a-test-page/"}'),
+            array(9, '{"Page name":"a-test-page","Previous page name":"a-test-page","Template name":"basic-page","Page URL":"/a-test-page/","Previous page URL":"/trash/a-test-page/"}'),
+        );
     }
 
 }
