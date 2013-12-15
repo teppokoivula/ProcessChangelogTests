@@ -224,7 +224,6 @@ class ProcessChangelogTest extends PHPUnit_Framework_TestCase {
         self::$operations[] = "deleted";
     }
 
-
     /**
      * Make sure that data collected in database matches performed operations
      *
