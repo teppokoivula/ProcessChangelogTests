@@ -10,7 +10,9 @@
  * DO NOT run these tests against production site, as they will add, edit and
  * remove pages when necessary, thus potentially seriously damaging your site!
  * 
- * @author Teppo Koivula
+ * @author Teppo Koivula, <teppo@flamingruby.com>
+ * @copyright Copyright (c) 2013, Teppo Koivula
+ * @license GNU/GPL v2, see LICENSE
  */
 
 class ProcessChangelogTest extends PHPUnit_Framework_TestCase {
