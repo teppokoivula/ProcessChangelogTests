@@ -14,7 +14,8 @@ You'll need to install PHPUnit in order to run these tests. There are couple
 of ways, visit http://phpunit.de/manual/3.7/en/installation.html for details.
 
 Once PHPUnit is installed, the rest is as simple as cloning this repository
-into ProcessChangelog directory and typing `phpunit ProcessChangelogTests`.
+into the directory of the module the tests are intended for and then typing
+`phpunit .`.
 
 ## See also
 
