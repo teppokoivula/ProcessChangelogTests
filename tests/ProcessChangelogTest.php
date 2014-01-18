@@ -48,7 +48,7 @@ class ProcessChangelogTest extends PHPUnit_Framework_TestCase {
             }
         }
 
-        // Delete all rows from changelog database table
+        // Delete all rows from custom database table
         wire('db')->query("DELETE FROM " . ProcessChangelogHooks::TABLE_NAME);
 
     }
@@ -57,7 +57,7 @@ class ProcessChangelogTest extends PHPUnit_Framework_TestCase {
      * Executed once after tests
      *
      * Cleanup; remove any pages created but not removed during tests and
-     * clear collected changelog data.
+     * clear all collected data from custom database table.
      *
      */
     public static function tearDownAfterClass() {
