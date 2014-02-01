@@ -37,34 +37,67 @@ class ProcessChangelogTest extends PHPUnit_Framework_TestCase {
         // Bootstrap ProcessWire
         require '../../../index.php';
 
+        // Messages and errors
+        $messages = array();
+        $errors = array();
+
         // Install module (if possible and not already installed)
         $module = substr(__CLASS__, 0, strlen(__CLASS__)-4);
         if (!wire('modules')->isInstalled($module)) {
             if (wire('modules')->isInstallable($module)) {
                 wire('modules')->install($module);
-                exit("Module $module installed, please rerun tests.");
+                wire('modules')->triggerInit();
+                $messages[] = "Module '$module' installed.";
             } else {
-                exit("Module $module not installable, please install manually and rerun tests.");
+                $errors[] = "Module $module not installable, please install manually and rerun tests.";
             }
         }
 
         // Delete all rows from custom database table
         wire('db')->query("DELETE FROM " . ProcessChangelogHooks::TABLE_NAME);
+        $messages[] = "Old entries deleted from database table '" . ProcessChangelogHooks::TABLE_NAME . "'.";
+
+        // Messages and errors
+        if ($messages) echo "\n" . implode($messages, " ") . "\n\n";
+        if ($errors) die("\n" . implode($errors, " ") . "\n\n");
 
     }
 
     /**
-     * Executed once after tests
+     * Executed once after all tests are finished
      *
-     * Cleanup; remove any pages created but not removed during tests and
-     * clear all collected data from custom database table.
+     * Cleanup; remove any pages created but not removed during tests (and
+     * uninstall the module) in order to prepare this site for new tests.
+     * Also clear all collected data from custom database table.
      *
      */
     public static function tearDownAfterClass() {
+
+        // Messages and errors
+        $messages = array();
+        $errors = array();
+
+        // Remove any pages created but not removed during tests
         foreach (wire('pages')->find("title^='a test page', include=all") as $page) {
             $page->delete();
+            $messages[] = "Page '{$page->url}' deleted.";
         }
-        wire('db')->query("DELETE FROM " . ProcessChangelogHooks::TABLE_NAME);
+
+        // Uninstall module (if installed)
+        $module = substr(__CLASS__, 0, strlen(__CLASS__)-4);
+        if (wire('modules')->isInstalled($module)) {
+            if (wire('modules')->isUninstallable($module)) {
+                wire('modules')->uninstall($module);
+                $messages[] = "Module '$module' uninstalled.";
+            } else {
+                $errors[] = "Module '$module' not uninstallable, please uninstall manually before any new tests.";
+            }
+        }
+
+        // Messages and errors
+        if ($messages) echo "\n\n" . implode($messages, " ") . "\n";
+        if ($errors) die("\n\n" . implode($errors, " ") . "\n");
+
     }
 
     /**
