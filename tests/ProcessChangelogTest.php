@@ -4,7 +4,7 @@
  * PHPUnit tests for Process Changelog ProcessWire module
  * 
  * Intended to be run against a clean installation of ProcessWire with Process
- * Changelog installed. Most of the tests included depend on each other, which
+ * Changelog included. Most of the tests included depend on each other, which
  * is why they're grouped together in one file and use depends annotation.
  * 
  * DO NOT run these tests against production site, as they will add, edit and
@@ -22,14 +22,15 @@ class ProcessChangelogTest extends PHPUnit_Framework_TestCase {
      * requirement set by certain features of ProcessWire.
      *
      */
-    protected static $operations = array();
+    protected static $operations;
     protected static $page_id;
+    protected static $module_name;
 
     /**
      * Executed once before tests
      *
      * Set test environment up by removing old data, bootstrapping ProcessWire
-     * and making sure that module undergoing tests is properly installed.
+     * and making sure that module undergoing tests is uinstalled.
      * 
      */
     public static function setUpBeforeClass() {
@@ -41,21 +42,20 @@ class ProcessChangelogTest extends PHPUnit_Framework_TestCase {
         $messages = array();
         $errors = array();
 
-        // Install module (if possible and not already installed)
-        $module = substr(__CLASS__, 0, strlen(__CLASS__)-4);
-        if (!wire('modules')->isInstalled($module)) {
-            if (wire('modules')->isInstallable($module)) {
-                wire('modules')->install($module);
-                wire('modules')->triggerInit();
-                $messages[] = "Module '$module' installed.";
-            } else {
-                $errors[] = "Module $module not installable, please install manually and rerun tests.";
-            }
+        // Set module name (unless already set)
+        if (!self::$module_name) {
+            self::$module_name = substr(__CLASS__, 0, strlen(__CLASS__)-4);
         }
 
-        // Delete all rows from custom database table
-        wire('db')->query("DELETE FROM " . ProcessChangelogHooks::TABLE_NAME);
-        $messages[] = "Old entries deleted from database table '" . ProcessChangelogHooks::TABLE_NAME . "'.";
+        // Uninstall module (if installed)
+        if (wire('modules')->isInstalled(self::$module_name)) {
+            if (wire('modules')->isUninstallable(self::$module_name)) {
+                wire('modules')->uninstall(self::$module_name);
+                $messages[] = "Module '" . self::$module_name . "' uninstalled.";
+            } else {
+                $errors[] = "Module '" . self::$module_name . "' not uninstallable, please uninstall manually before any new tests.";
+            }
+        }
 
         // Messages and errors
         if ($messages) echo "\n" . implode($messages, " ") . "\n\n";
@@ -84,13 +84,12 @@ class ProcessChangelogTest extends PHPUnit_Framework_TestCase {
         }
 
         // Uninstall module (if installed)
-        $module = substr(__CLASS__, 0, strlen(__CLASS__)-4);
-        if (wire('modules')->isInstalled($module)) {
-            if (wire('modules')->isUninstallable($module)) {
-                wire('modules')->uninstall($module);
-                $messages[] = "Module '$module' uninstalled.";
+        if (wire('modules')->isInstalled(self::$module_name)) {
+            if (wire('modules')->isUninstallable(self::$module_name)) {
+                wire('modules')->uninstall(self::$module_name);
+                $messages[] = "Module '" . self::$module_name . "' uninstalled.";
             } else {
-                $errors[] = "Module '$module' not uninstallable, please uninstall manually before any new tests.";
+                $errors[] = "Module '" . self::$module_name . "' not uninstallable, please uninstall manually before any new tests.";
             }
         }
 
@@ -103,19 +102,50 @@ class ProcessChangelogTest extends PHPUnit_Framework_TestCase {
     /**
      * Executed after each test
      *
-     * At the moment all tests end with same assertion, so it makes sense to
-     * move it somewhere where it gets executed automatically after each test.
+     * Almost all tests end with same assertion, so it makes sense to move it
+     * somewhere where it gets executed automatically after each test.
      *
      */
     public function tearDown() {
-        $sql = "SELECT COUNT(*) FROM " . ProcessChangelogHooks::TABLE_NAME;
-        $row = wire('db')->query($sql)->fetch_row();
-        $this->assertEquals(count(self::$operations), reset($row));
+        if (!in_array($this->getName(), array("testModuleIsInstallable", "testUninstallModule"))) {
+            $sql = "SELECT COUNT(*) FROM " . constant(self::$module_name . "Hooks::TABLE_NAME");
+            $row = wire('db')->query($sql)->fetch_row();
+            $this->assertEquals(count(self::$operations), reset($row));
+        }
+    }
+
+    /**
+     * Make sure that module is installable
+     *
+     * @return string module name
+     */
+    public function testModuleIsInstallable() {
+        $this->assertTrue(wire('modules')->isInstallable(self::$module_name));
+        return self::$module_name;
+    }
+
+    /**
+     * Install module
+     * 
+     * @depends testModuleIsInstallable
+     * @param string $module_name
+     * @return string module name
+     */
+    public function testInstallModule($module_name) {
+        
+        // Install the module
+        wire('modules')->install($module_name);
+        wire('modules')->triggerInit();
+        $this->assertTrue(wire('modules')->isInstalled($module_name));
+        
+        return $module_name;
+
     }
 
     /**
      * Add new page
      *
+     * @depends testInstallModule
      * @return Page
      */
     public function testAddPage()
@@ -260,6 +290,7 @@ class ProcessChangelogTest extends PHPUnit_Framework_TestCase {
     /**
      * Make sure that data collected in database matches performed operations
      *
+     * @depends testInstallModule
      */
     public function testTableOperations()
     {
@@ -271,6 +302,7 @@ class ProcessChangelogTest extends PHPUnit_Framework_TestCase {
     /**
      * Make sure that database contains correct data
      *
+     * @depends testInstallModule
      * @dataProvider providerForTestTableData
      * @param int $key ID number of current database table row
      * @param string $data Expected database table row data
@@ -304,6 +336,29 @@ class ProcessChangelogTest extends PHPUnit_Framework_TestCase {
             array(8, '{"Page title":"a test page 2","Page name":"a-test-page","Previous page name":"a-test-page","Template name":"basic-page","Page URL":"/a-test-page/","Previous page URL":"/trash/a-test-page/"}'),
             array(9, '{"Page name":"a-test-page","Previous page name":"a-test-page","Template name":"basic-page","Page URL":"/a-test-page/","Previous page URL":"/trash/a-test-page/"}'),
         );
+    }
+
+    /**
+     * Make sure that module is uninstallable
+     *
+     * @depends testInstallModule
+     * @param string $module_name
+     * @return string module name
+     */
+    public function testModuleIsUninstallable($module_name) {
+        $this->assertTrue(wire('modules')->isUninstallable($module_name));
+        return $module_name;
+    }
+
+    /**
+     * Uninstall module
+     *
+     * @depends testModuleIsUninstallable
+     * @param string $module_name
+     */
+    public function testUninstallModule($module_name) {
+        wire('modules')->uninstall($module_name);
+        $this->assertFalse(wire('modules')->isInstalled($module_name));
     }
 
 }
